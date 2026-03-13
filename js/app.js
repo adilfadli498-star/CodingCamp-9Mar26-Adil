@@ -54,7 +54,7 @@ function rubahNama(input){
     let name = document.getElementById('name')
     name.innerText = input
 }
-rubahNama("Asep")
+rubahNama("Adil Fadli")
 
 /**
  * Generate unique ID using timestamp and random number
