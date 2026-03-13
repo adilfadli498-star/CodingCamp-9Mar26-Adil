@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StorageManager Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>StorageManager Test</h1>
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+
+        function addResult(testName, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}: ${message}`;
+            results.appendChild(div);
+        }
+
+        // Create StorageManager instance
+        const storage = new StorageManager();
+
+        // Test 1: isAvailable
+        const isAvailable = storage.isAvailable();
+        addResult('isAvailable', isAvailable === true, `Storage is ${isAvailable ? 'available' : 'not available'}`);
+
+        // Test 2: save and load simple data
+        const testKey = 'test-key';
+        const testData = { name: 'Test', value: 123 };
+        const saveResult = storage.save(testKey, testData);
+        addResult('save', saveResult === true, `Save returned ${saveResult}`);
+
+        const loadResult = storage.load(testKey);
+        const loadMatches = JSON.stringify(loadResult) === JSON.stringify(testData);
+        addResult('load', loadMatches, `Loaded data matches: ${JSON.stringify(loadResult)}`);
+
+        // Test 3: save and load array
+        const arrayKey = 'test-array';
+        const arrayData = [1, 2, 3, 4, 5];
+        storage.save(arrayKey, arrayData);
+        const loadedArray = storage.load(arrayKey);
+        const arrayMatches = JSON.stringify(loadedArray) === JSON.stringify(arrayData);
+        addResult('save/load array', arrayMatches, `Array data matches: ${JSON.stringify(loadedArray)}`);
+
+        // Test 4: load non-existent key
+        const nonExistent = storage.load('non-existent-key');
+        addResult('load non-existent', nonExistent === null, `Non-existent key returns null: ${nonExistent}`);
+
+        // Test 5: remove
+        const removeResult = storage.remove(testKey);
+        addResult('remove', removeResult === true, `Remove returned ${removeResult}`);
+        const afterRemove = storage.load(testKey);
+        addResult('load after remove', afterRemove === null, `After remove, load returns null: ${afterRemove}`);
+
+        // Test 6: save complex nested data
+        const complexKey = 'test-complex';
+        const complexData = {
+            tasks: [
+                { id: '1', text: 'Task 1', completed: false, createdAt: Date.now() },
+                { id: '2', text: 'Task 2', completed: true, createdAt: Date.now() }
+            ],
+            metadata: {
+                version: '1.0',
+                lastModified: Date.now()
+            }
+        };
+        storage.save(complexKey, complexData);
+        const loadedComplex = storage.load(complexKey);
+        const complexMatches = JSON.stringify(loadedComplex) === JSON.stringify(complexData);
+        addResult('save/load complex data', complexMatches, `Complex data matches`);
+
+        // Test 7: clear dashboard data
+        storage.save('productivity-dashboard-tasks', [{ id: '1', text: 'Test' }]);
+        storage.save('productivity-dashboard-links', [{ id: '1', name: 'Test', url: 'https://test.com' }]);
+        const clearResult = storage.clear();
+        addResult('clear', clearResult === true, `Clear returned ${clearResult}`);
+        const tasksAfterClear = storage.load('productivity-dashboard-tasks');
+        const linksAfterClear = storage.load('productivity-dashboard-links');
+        addResult('clear tasks', tasksAfterClear === null, `Tasks cleared: ${tasksAfterClear}`);
+        addResult('clear links', linksAfterClear === null, `Links cleared: ${linksAfterClear}`);
+
+        // Test 8: Error handling - invalid JSON (simulate by manually setting bad data)
+        localStorage.setItem('bad-json-key', '{invalid json}');
+        const badJsonResult = storage.load('bad-json-key');
+        addResult('load invalid JSON', badJsonResult === null, `Invalid JSON returns null (error logged to console)`);
+
+        // Cleanup
+        storage.remove(arrayKey);
+        storage.remove(complexKey);
+        storage.remove('bad-json-key');
+
+        console.log('All tests completed. Check console for any error logs from StorageManager.');
+    </script>
+</body>
+</html>

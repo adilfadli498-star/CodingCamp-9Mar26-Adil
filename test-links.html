@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinksController Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .widget {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .links-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .link-items {
+            list-style: none;
+            padding: 0;
+        }
+        .link-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .link-item a {
+            flex: 1;
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        .link-item a:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            display: none;
+        }
+        .empty-state.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>LinksController Test</h1>
+    
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manual Testing</h2>
+        <div id="quick-links" class="widget">
+            <h3>Quick Links</h3>
+            <form class="links-form">
+                <input type="text" id="link-name" placeholder="Link name..." maxlength="100" required>
+                <input type="url" id="link-url" placeholder="https://..." required>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+            <ul class="link-items"></ul>
+            <div class="empty-state">No links yet. Add one above!</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test suite
+        function runTests() {
+            const results = document.getElementById('test-results');
+            let output = '';
+            let passed = 0;
+            let failed = 0;
+
+            function test(name, fn) {
+                try {
+                    fn();
+                    output += `<div class="success">✓ ${name}</div>`;
+                    passed++;
+                } catch (e) {
+                    output += `<div class="error">✗ ${name}: ${e.message}</div>`;
+                    failed++;
+                }
+            }
+
+            function assert(condition, message) {
+                if (!condition) throw new Error(message);
+            }
+
+            // Clear storage before tests
+            localStorage.removeItem('productivity-dashboard-links');
+
+            // Test 1: Constructor initialization
+            test('Constructor initializes with container and storage manager', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                assert(controller.container === container, 'Container not set');
+                assert(controller.storageManager === storage, 'Storage manager not set');
+                assert(Array.isArray(controller.links), 'Links array not initialized');
+                assert(controller.storageKey === 'productivity-dashboard-links', 'Storage key incorrect');
+            });
+
+            // Test 2: Link data model
+            test('addLink creates link with correct data model', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                controller.addLink('GitHub', 'https://github.com');
+                
+                assert(controller.links.length === 1, 'Link not added');
+                const link = controller.links[0];
+                assert(link.id, 'Link ID not generated');
+                assert(link.name === 'GitHub', 'Link name incorrect');
+                assert(link.url === 'https://github.com', 'Link URL incorrect');
+                assert(typeof link.createdAt === 'number', 'CreatedAt not set');
+            });
+
+            // Test 3: URL validation - valid URLs
+            test('validateUrl accepts valid URLs with http://', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                assert(controller.validateUrl('http://example.com'), 'http:// URL rejected');
+                assert(controller.validateUrl('https://example.com'), 'https:// URL rejected');
+            });
+
+            // Test 4: URL validation - invalid URLs
+            test('validateUrl rejects URLs without protocol', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                assert(!controller.validateUrl('example.com'), 'URL without protocol accepted');
+                assert(!controller.validateUrl('ftp://example.com'), 'FTP protocol accepted');
+            });
+
+            // Test 5: Delete link
+            test('deleteLink removes link from list', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                controller.addLink('GitHub', 'https://github.com');
+                controller.addLink('Google', 'https://google.com');
+                const linkId = controller.links[0].id;
+                
+                controller.deleteLink(linkId);
+                
+                assert(controller.links.length === 1, 'Link not deleted');
+                assert(controller.links[0].name === 'Google', 'Wrong link deleted');
+            });
+
+            // Test 6: Storage persistence
+            test('saveLinks and loadLinks persist data', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller1 = new LinksController(container, storage);
+                
+                controller1.addLink('GitHub', 'https://github.com');
+                controller1.addLink('Google', 'https://google.com');
+                
+                // Create new controller and load
+                const controller2 = new LinksController(container, storage);
+                controller2.loadLinks();
+                
+                assert(controller2.links.length === 2, 'Links not loaded');
+                assert(controller2.links[0].name === 'GitHub', 'First link incorrect');
+                assert(controller2.links[1].name === 'Google', 'Second link incorrect');
+            });
+
+            // Test 7: Empty state handling
+            test('renderLinks shows empty state when no links', () => {
+                localStorage.removeItem('productivity-dashboard-links');
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                controller.init();
+                
+                const emptyState = container.querySelector('.empty-state');
+                assert(emptyState.classList.contains('visible'), 'Empty state not visible');
+            });
+
+            // Test 8: Link rendering with proper attributes
+            test('createLinkElement creates anchor with target="_blank" and rel="noopener noreferrer"', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                const link = {
+                    id: 'test-id',
+                    name: 'Test Link',
+                    url: 'https://example.com',
+                    createdAt: Date.now()
+                };
+                
+                const element = controller.createLinkElement(link);
+                const anchor = element.querySelector('a');
+                
+                assert(anchor.href === 'https://example.com/', 'Anchor href incorrect');
+                assert(anchor.target === '_blank', 'Anchor target not _blank');
+                assert(anchor.rel === 'noopener noreferrer', 'Anchor rel incorrect');
+                assert(anchor.textContent === 'Test Link', 'Anchor text incorrect');
+            });
+
+            // Test 9: Name validation
+            test('handleAddLink rejects empty names', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                controller.nameInput = { value: '   ' };
+                controller.urlInput = { value: 'https://example.com' };
+                
+                controller.handleAddLink();
+                
+                assert(controller.links.length === 0, 'Empty name accepted');
+            });
+
+            // Test 10: Name length validation
+            test('handleAddLink rejects names over 100 characters', () => {
+                const container = document.getElementById('quick-links');
+                const storage = new StorageManager();
+                const controller = new LinksController(container, storage);
+                
+                const longName = 'a'.repeat(101);
+                controller.nameInput = { value: longName };
+                controller.urlInput = { value: 'https://example.com' };
+                
+                controller.handleAddLink();
+                
+                assert(controller.links.length === 0, 'Long name accepted');
+            });
+
+            // Display results
+            output += `<div style="margin-top: 20px; font-weight: bold;">`;
+            output += `Total: ${passed + failed} | `;
+            output += `<span class="success">Passed: ${passed}</span> | `;
+            output += `<span class="error">Failed: ${failed}</span>`;
+            output += `</div>`;
+            
+            results.innerHTML = output;
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            runTests();
+            
+            // Initialize manual testing widget
+            const container = document.getElementById('quick-links');
+            const storage = new StorageManager();
+            const controller = new LinksController(container, storage);
+            controller.init();
+        });
+    </script>
+</body>
+</html>

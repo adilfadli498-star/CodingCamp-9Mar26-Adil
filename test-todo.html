@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoController Test</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            padding: 2rem;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>TodoController Test</h1>
+    
+    <div class="test-section">
+        <h2>Manual Test: Interactive To-Do List</h2>
+        <section id="todo-list" class="widget">
+            <h3>To-Do List</h3>
+            <form class="todo-form">
+                <input type="text" id="todo-input" placeholder="Add a new task..." maxlength="500" required>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+            <ul class="todo-items"></ul>
+            <div class="empty-state">No tasks yet. Add one above!</div>
+        </section>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultsDiv = document.getElementById('test-results');
+            
+            function addTestResult(name, passed, message) {
+                const div = document.createElement('div');
+                div.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+                div.textContent = `${passed ? '✓' : '✗'} ${name}: ${message}`;
+                resultsDiv.appendChild(div);
+            }
+
+            // Create test instance
+            const testContainer = document.createElement('div');
+            testContainer.innerHTML = `
+                <div id="test-todo" class="widget">
+                    <form class="todo-form">
+                        <input type="text" id="test-todo-input">
+                        <button type="submit">Add</button>
+                    </form>
+                    <ul class="todo-items"></ul>
+                    <div class="empty-state"></div>
+                </div>
+            `;
+            document.body.appendChild(testContainer);
+            
+            const storageManager = new StorageManager();
+            const todoController = new TodoController(
+                document.getElementById('test-todo'),
+                storageManager
+            );
+            
+            // Clear any existing test data
+            storageManager.remove('productivity-dashboard-tasks');
+            
+            // Test 1: Initialization
+            todoController.init();
+            addTestResult('Initialization', todoController.tasks.length === 0, 
+                `Tasks array initialized (length: ${todoController.tasks.length})`);
+            
+            // Test 2: Add task
+            todoController.addTask('Test task 1');
+            addTestResult('Add task', todoController.tasks.length === 1 && todoController.tasks[0].text === 'Test task 1',
+                `Task added successfully (count: ${todoController.tasks.length})`);
+            
+            // Test 3: Task properties
+            const task = todoController.tasks[0];
+            const hasId = task.id && task.id.length > 0;
+            const hasText = task.text === 'Test task 1';
+            const hasCompleted = task.completed === false;
+            const hasCreatedAt = typeof task.createdAt === 'number' && task.createdAt > 0;
+            addTestResult('Task properties', hasId && hasText && hasCompleted && hasCreatedAt,
+                `Task has all required properties (id: ${hasId}, text: ${hasText}, completed: ${hasCompleted}, createdAt: ${hasCreatedAt})`);
+            
+            // Test 4: Toggle task
+            const taskId = task.id;
+            todoController.toggleTask(taskId);
+            addTestResult('Toggle task', todoController.tasks[0].completed === true,
+                `Task toggled to completed: ${todoController.tasks[0].completed}`);
+            
+            // Test 5: Edit task
+            todoController.editTask(taskId, 'Updated task text');
+            addTestResult('Edit task', todoController.tasks[0].text === 'Updated task text',
+                `Task text updated: "${todoController.tasks[0].text}"`);
+            
+            // Test 6: Validation - empty text
+            const beforeCount = todoController.tasks.length;
+            todoController.addTask('   '); // Whitespace only
+            addTestResult('Validation - whitespace only', todoController.tasks.length === beforeCount,
+                `Whitespace-only task rejected (count unchanged: ${todoController.tasks.length})`);
+            
+            // Test 7: Validation - max length
+            const longText = 'a'.repeat(501);
+            todoController.addTask(longText);
+            addTestResult('Validation - max length', todoController.tasks.length === beforeCount,
+                `Task exceeding 500 chars rejected (count unchanged: ${todoController.tasks.length})`);
+            
+            // Test 8: Add multiple tasks
+            todoController.addTask('Task 2');
+            todoController.addTask('Task 3');
+            addTestResult('Add multiple tasks', todoController.tasks.length === 3,
+                `Multiple tasks added (count: ${todoController.tasks.length})`);
+            
+            // Test 9: Delete task
+            todoController.deleteTask(taskId);
+            addTestResult('Delete task', todoController.tasks.length === 2 && !todoController.tasks.find(t => t.id === taskId),
+                `Task deleted successfully (count: ${todoController.tasks.length})`);
+            
+            // Test 10: Storage persistence
+            todoController.saveTasks();
+            const loaded = storageManager.load('productivity-dashboard-tasks');
+            addTestResult('Storage persistence', Array.isArray(loaded) && loaded.length === 2,
+                `Tasks saved and loaded from storage (loaded count: ${loaded ? loaded.length : 0})`);
+            
+            // Test 11: Load tasks
+            const newController = new TodoController(
+                document.getElementById('test-todo'),
+                storageManager
+            );
+            newController.init();
+            addTestResult('Load tasks', newController.tasks.length === 2,
+                `Tasks loaded on init (count: ${newController.tasks.length})`);
+            
+            // Test 12: Empty state
+            newController.tasks = [];
+            newController.renderTasks();
+            const emptyState = document.querySelector('#test-todo .empty-state');
+            addTestResult('Empty state display', emptyState && emptyState.classList.contains('visible'),
+                `Empty state shown when no tasks (visible: ${emptyState ? emptyState.classList.contains('visible') : false})`);
+            
+            // Clean up
+            storageManager.remove('productivity-dashboard-tasks');
+            testContainer.remove();
+            
+            // Summary
+            const allTests = resultsDiv.querySelectorAll('.test-result');
+            const passedTests = resultsDiv.querySelectorAll('.test-pass');
+            const summary = document.createElement('div');
+            summary.className = 'test-result ' + (allTests.length === passedTests.length ? 'test-pass' : 'test-fail');
+            summary.style.fontWeight = 'bold';
+            summary.style.marginTop = '1rem';
+            summary.textContent = `Summary: ${passedTests.length}/${allTests.length} tests passed`;
+            resultsDiv.appendChild(summary);
+        });
+    </script>
+</body>
+</html>

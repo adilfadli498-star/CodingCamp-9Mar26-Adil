@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Test - Task 12.1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Security Test - Task 12.1</h1>
+    <p>Testing XSS prevention and input sanitization measures</p>
+
+    <div id="results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(title, passed, message) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            
+            const heading = document.createElement('h2');
+            heading.textContent = title;
+            section.appendChild(heading);
+            
+            const result = document.createElement('div');
+            result.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            result.textContent = `${passed ? '✓ PASS' : '✗ FAIL'}: ${message}`;
+            section.appendChild(result);
+            
+            results.appendChild(section);
+        }
+
+        // Test 1: URL Sanitization - Valid URLs
+        console.log('Test 1: URL Sanitization - Valid URLs');
+        const validUrls = [
+            'https://example.com',
+            'http://example.com',
+            'https://example.com/path',
+            'https://example.com:8080/path?query=value'
+        ];
+        
+        let validUrlsPass = true;
+        validUrls.forEach(url => {
+            const sanitized = sanitizeUrl(url);
+            if (!sanitized || sanitized !== url) {
+                validUrlsPass = false;
+                console.error(`Failed to sanitize valid URL: ${url}`);
+            }
+        });
+        addResult(
+            'Test 1: Valid URL Sanitization',
+            validUrlsPass,
+            validUrlsPass ? 'All valid URLs pass sanitization' : 'Some valid URLs failed'
+        );
+
+        // Test 2: URL Sanitization - Dangerous URLs
+        console.log('Test 2: URL Sanitization - Dangerous URLs');
+        const dangerousUrls = [
+            'javascript:alert("XSS")',
+            'data:text/html,<script>alert("XSS")<\/script>',
+            'vbscript:msgbox("XSS")',
+            'file:///etc/passwd',
+            '',
+            '   ',
+            'not-a-url'
+        ];
+        
+        let dangerousUrlsPass = true;
+        dangerousUrls.forEach(url => {
+            const sanitized = sanitizeUrl(url);
+            if (sanitized !== null) {
+                dangerousUrlsPass = false;
+                console.error(`Failed to block dangerous URL: ${url} -> ${sanitized}`);
+            }
+        });
+        addResult(
+            'Test 2: Dangerous URL Blocking',
+            dangerousUrlsPass,
+            dangerousUrlsPass ? 'All dangerous URLs blocked' : 'Some dangerous URLs passed'
+        );
+
+        // Test 3: textContent Usage
+        console.log('Test 3: textContent Usage');
+        const storageManager = new StorageManager();
+        const testContainer = document.createElement('div');
+        testContainer.innerHTML = `
+            <form class="todo-form">
+                <input type="text" id="todo-input">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="todo-items"></ul>
+            <div class="empty-state"></div>
+        `;
+        document.body.appendChild(testContainer);
+        
+        const todoController = new TodoController(testContainer, storageManager);
+        todoController.init();
+        
+        // Add a task with potential XSS
+        const xssText = '<script>alert("XSS")<\/script>';
+        todoController.addTask(xssText);
+        
+        // Check if the text is rendered safely
+        const taskText = testContainer.querySelector('.todo-text');
+        const textContentPass = taskText && taskText.textContent === xssText && !taskText.innerHTML.includes('<script>');
+        
+        addResult(
+            'Test 3: textContent for User Content',
+            textContentPass,
+            textContentPass ? 'User content rendered safely with textContent' : 'Potential XSS vulnerability'
+        );
+        
+        testContainer.remove();
+
+        // Test 4: Input Trimming
+        console.log('Test 4: Input Trimming');
+        const testContainer2 = document.createElement('div');
+        testContainer2.innerHTML = `
+            <form class="todo-form">
+                <input type="text" id="todo-input">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="todo-items"></ul>
+            <div class="empty-state"></div>
+        `;
+        document.body.appendChild(testContainer2);
+        
+        const todoController2 = new TodoController(testContainer2, storageManager);
+        todoController2.init();
+        
+        // Add a task with whitespace
+        const textWithWhitespace = '   Test Task   ';
+        todoController2.addTask(textWithWhitespace);
+        
+        // Check if whitespace was trimmed
+        const trimmedTask = todoController2.tasks[0];
+        const trimmingPass = trimmedTask && trimmedTask.text === 'Test Task';
+        
+        addResult(
+            'Test 4: Input Trimming',
+            trimmingPass,
+            trimmingPass ? 'Whitespace trimmed from inputs' : 'Whitespace not trimmed'
+        );
+        
+        testContainer2.remove();
+
+        // Test 5: Length Limits
+        console.log('Test 5: Length Limits');
+        const testContainer3 = document.createElement('div');
+        testContainer3.innerHTML = `
+            <form class="todo-form">
+                <input type="text" id="todo-input" maxlength="500">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="todo-items"></ul>
+            <div class="empty-state"></div>
+        `;
+        document.body.appendChild(testContainer3);
+        
+        const todoController3 = new TodoController(testContainer3, storageManager);
+        todoController3.init();
+        
+        // Try to add a task that's too long
+        const longText = 'a'.repeat(501);
+        const initialLength = todoController3.tasks.length;
+        todoController3.addTask(longText);
+        
+        // Check if task was rejected
+        const lengthLimitPass = todoController3.tasks.length === initialLength;
+        
+        addResult(
+            'Test 5: Length Limit Enforcement',
+            lengthLimitPass,
+            lengthLimitPass ? 'Tasks exceeding 500 chars rejected' : 'Length limit not enforced'
+        );
+        
+        testContainer3.remove();
+
+        // Test 6: rel="noopener noreferrer" on Links
+        console.log('Test 6: rel="noopener noreferrer" on Links');
+        const testContainer4 = document.createElement('div');
+        testContainer4.innerHTML = `
+            <form class="links-form">
+                <input type="text" id="link-name">
+                <input type="url" id="link-url">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="link-items"></ul>
+            <div class="empty-state"></div>
+        `;
+        document.body.appendChild(testContainer4);
+        
+        const linksController = new LinksController(testContainer4, storageManager);
+        linksController.init();
+        
+        // Add a link
+        linksController.addLink('Test Link', 'https://example.com');
+        
+        // Check if rel attribute is set correctly
+        const linkAnchor = testContainer4.querySelector('a');
+        const relPass = linkAnchor && linkAnchor.rel === 'noopener noreferrer' && linkAnchor.target === '_blank';
+        
+        addResult(
+            'Test 6: External Link Security',
+            relPass,
+            relPass ? 'External links have rel="noopener noreferrer"' : 'Missing security attributes'
+        );
+        
+        testContainer4.remove();
+
+        // Test 7: URL Sanitization in Link Creation
+        console.log('Test 7: URL Sanitization in Link Creation');
+        const testContainer5 = document.createElement('div');
+        testContainer5.innerHTML = `
+            <form class="links-form">
+                <input type="text" id="link-name">
+                <input type="url" id="link-url">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="link-items"></ul>
+            <div class="empty-state"></div>
+        `;
+        document.body.appendChild(testContainer5);
+        
+        const linksController2 = new LinksController(testContainer5, storageManager);
+        linksController2.init();
+        
+        // Try to add a link with javascript: protocol
+        const initialLinkCount = linksController2.links.length;
+        linksController2.addLink('Malicious', 'javascript:alert("XSS")');
+        
+        // Check if link was rejected
+        const linkSanitizationPass = linksController2.links.length === initialLinkCount;
+        
+        addResult(
+            'Test 7: Link URL Sanitization',
+            linkSanitizationPass,
+            linkSanitizationPass ? 'Dangerous URLs rejected in link creation' : 'Dangerous URL accepted'
+        );
+        
+        testContainer5.remove();
+
+        console.log('All security tests completed!');
+    </script>
+</body>
+</html>

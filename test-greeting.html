@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GreetingController</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <main class="dashboard">
+        <header class="dashboard-header">
+            <h1>GreetingController Test</h1>
+        </header>
+
+        <div class="widgets-container">
+            <!-- Greeting Widget -->
+            <section id="greeting-widget" class="widget">
+                <div class="date-display"></div>
+                <div class="time-display"></div>
+                <div class="greeting-message"></div>
+            </section>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <button id="destroy-btn" class="btn btn-danger">Destroy Controller</button>
+            <button id="reinit-btn" class="btn btn-primary">Reinitialize Controller</button>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test GreetingController
+        let greetingController;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const greetingWidget = document.getElementById('greeting-widget');
+            greetingController = new GreetingController(greetingWidget);
+            greetingController.init();
+
+            console.log('GreetingController initialized');
+
+            // Test destroy functionality
+            document.getElementById('destroy-btn').addEventListener('click', () => {
+                greetingController.destroy();
+                console.log('GreetingController destroyed');
+            });
+
+            // Test reinitialize functionality
+            document.getElementById('reinit-btn').addEventListener('click', () => {
+                greetingController.init();
+                console.log('GreetingController reinitialized');
+            });
+        });
+    </script>
+</body>
+</html>

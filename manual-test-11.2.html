@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test - Task 11.2 ARIA Labels</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-card h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-step {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+        }
+        .test-step h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .expected {
+            background: #e8f5e9;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .code {
+            background: #263238;
+            color: #aed581;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px;
+            margin: 5px 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual Test Guide - Task 11.2</h1>
+    <p><strong>Purpose:</strong> Verify ARIA labels and semantic HTML implementation</p>
+
+    <div class="test-card">
+        <h2>Test 1: ARIA Labels on Timer Buttons</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Open <code>index.html</code> in your browser</li>
+                <li>Open Developer Tools (F12)</li>
+                <li>Navigate to the Elements/Inspector tab</li>
+                <li>Find the timer buttons (Start, Stop, Reset)</li>
+                <li>Verify each button has an <code>aria-label</code> attribute</li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>Start button: <code>aria-label="Start timer"</code></li>
+                    <li>Stop button: <code>aria-label="Stop timer"</code></li>
+                    <li>Reset button: <code>aria-label="Reset timer"</code></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 2: ARIA Live Regions for Timer</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>In Developer Tools, find the <code>.timer-display</code> element</li>
+                <li>Verify it has <code>aria-live="polite"</code></li>
+                <li>Verify it has <code>aria-atomic="true"</code></li>
+                <li>Find the <code>.timer-status</code> element</li>
+                <li>Verify it has <code>aria-live="polite"</code></li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>Timer display: <code>aria-live="polite" aria-atomic="true"</code></li>
+                    <li>Timer status: <code>aria-live="polite"</code></li>
+                </ul>
+            </div>
+            <div class="note">
+                <strong>Note:</strong> These attributes allow screen readers to announce timer updates without interrupting the user.
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 3: ARIA Checked for Task Checkboxes</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>In the todo list, add a new task (e.g., "Test Task")</li>
+                <li>In Developer Tools, find the checkbox element (<code>.todo-checkbox</code>)</li>
+                <li>Verify it has <code>aria-checked="false"</code></li>
+                <li>Click the checkbox to mark the task as complete</li>
+                <li>Verify the attribute changes to <code>aria-checked="true"</code></li>
+                <li>Click again to uncheck</li>
+                <li>Verify it changes back to <code>aria-checked="false"</code></li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>Unchecked task: <code>aria-checked="false"</code></li>
+                    <li>Checked task: <code>aria-checked="true"</code></li>
+                    <li>Attribute updates dynamically when toggled</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 4: Semantic HTML Elements</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Open Developer Tools Console</li>
+                <li>Run the following commands to verify semantic HTML:</li>
+            </ol>
+            <div class="code">
+// Check for button elements<br>
+document.querySelectorAll('button').length<br>
+// Expected: 6 or more<br>
+<br>
+// Check for form elements<br>
+document.querySelectorAll('form').length<br>
+// Expected: 2<br>
+<br>
+// Check for input elements<br>
+document.querySelectorAll('input').length<br>
+// Expected: 3 or more<br>
+<br>
+// Check for ul elements<br>
+document.querySelectorAll('ul').length<br>
+// Expected: 2<br>
+<br>
+// Check for semantic structure<br>
+document.querySelector('main') !== null<br>
+// Expected: true<br>
+<br>
+document.querySelector('header') !== null<br>
+// Expected: true<br>
+<br>
+document.querySelectorAll('section').length<br>
+// Expected: 4
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 5: Dynamic Button ARIA Labels</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Add a task with text "My Important Task"</li>
+                <li>In Developer Tools, find the Edit button for this task</li>
+                <li>Verify it has <code>aria-label="Edit task "My Important Task""</code></li>
+                <li>Find the Delete button</li>
+                <li>Verify it has <code>aria-label="Delete task "My Important Task""</code></li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>Edit button includes task text in aria-label</li>
+                    <li>Delete button includes task text in aria-label</li>
+                    <li>Labels are descriptive and context-specific</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 6: Form Input ARIA Labels</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>In Developer Tools, find the todo input field</li>
+                <li>Verify it has <code>aria-label="New task description"</code></li>
+                <li>Find the link name input</li>
+                <li>Verify it has <code>aria-label="Link name"</code></li>
+                <li>Find the link URL input</li>
+                <li>Verify it has <code>aria-label="Link URL"</code></li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>All form inputs have descriptive aria-label attributes</li>
+                    <li>Labels clearly indicate the purpose of each input</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Test 7: Screen Reader Testing (Optional)</h2>
+        <div class="test-step">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Enable a screen reader:
+                    <ul>
+                        <li>Windows: NVDA (free) or JAWS</li>
+                        <li>macOS: VoiceOver (Cmd+F5)</li>
+                        <li>Chrome: ChromeVox extension</li>
+                    </ul>
+                </li>
+                <li>Navigate through the page using Tab key</li>
+                <li>Verify screen reader announces:
+                    <ul>
+                        <li>Button labels (Start timer, Stop timer, etc.)</li>
+                        <li>Input labels (New task description, etc.)</li>
+                        <li>Checkbox states (checked/unchecked)</li>
+                    </ul>
+                </li>
+                <li>Start the timer and verify time updates are announced</li>
+                <li>Add a task and verify checkbox state is announced</li>
+            </ol>
+            <div class="expected">
+                <strong>Expected Result:</strong>
+                <ul>
+                    <li>All interactive elements are announced with descriptive labels</li>
+                    <li>Timer updates are announced politely (not interrupting)</li>
+                    <li>Task completion state changes are announced</li>
+                </ul>
+            </div>
+            <div class="note">
+                <strong>Note:</strong> This test requires a screen reader. If you don't have one installed, you can skip this test or install NVDA (free for Windows) or use VoiceOver (built into macOS).
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>Checklist - All Tests</h2>
+        <ul class="checklist">
+            <li>Timer buttons have aria-label attributes</li>
+            <li>Timer display has aria-live="polite"</li>
+            <li>Timer status has aria-live="polite"</li>
+            <li>Task checkboxes have aria-checked attribute</li>
+            <li>aria-checked updates when task is toggled</li>
+            <li>Edit buttons have descriptive aria-label</li>
+            <li>Delete buttons have descriptive aria-label</li>
+            <li>Form inputs have aria-label attributes</li>
+            <li>Submit buttons have aria-label attributes</li>
+            <li>Uses semantic &lt;button&gt; elements</li>
+            <li>Uses semantic &lt;form&gt; elements</li>
+            <li>Uses semantic &lt;input&gt; elements</li>
+            <li>Uses semantic &lt;ul&gt; and &lt;li&gt; elements</li>
+            <li>Uses semantic structural elements (main, header, section)</li>
+            <li>Screen reader announces all labels correctly (optional)</li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>Quick Console Test</h2>
+        <div class="test-step">
+            <p>Run this in the browser console on <code>index.html</code> for a quick verification:</p>
+            <div class="code">
+// Count all elements with aria-label<br>
+console.log('ARIA Labels:', document.querySelectorAll('[aria-label]').length);<br>
+// Expected: 6+<br>
+<br>
+// Count all elements with aria-live<br>
+console.log('ARIA Live:', document.querySelectorAll('[aria-live]').length);<br>
+// Expected: 2<br>
+<br>
+// Check semantic elements<br>
+console.log('Buttons:', document.querySelectorAll('button').length);<br>
+console.log('Forms:', document.querySelectorAll('form').length);<br>
+console.log('Inputs:', document.querySelectorAll('input').length);<br>
+console.log('Lists:', document.querySelectorAll('ul').length);<br>
+console.log('Main:', document.querySelector('main') !== null);<br>
+console.log('Header:', document.querySelector('header') !== null);<br>
+console.log('Sections:', document.querySelectorAll('section').length);
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card" style="background: #e8f5e9;">
+        <h2>✓ Task 11.2 Complete</h2>
+        <p>If all tests pass, Task 11.2 (ARIA Labels and Semantic HTML) is successfully implemented!</p>
+        <p><strong>Key Achievements:</strong></p>
+        <ul>
+            <li>All interactive elements have descriptive ARIA labels</li>
+            <li>Timer updates use ARIA live regions for screen reader announcements</li>
+            <li>Task checkboxes have aria-checked attributes that update dynamically</li>
+            <li>Semantic HTML elements are used throughout (button, form, input, ul, li)</li>
+            <li>Application is accessible to users with assistive technologies</li>
+        </ul>
+    </div>
+</body>
+</html>

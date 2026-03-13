@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Manager Task 2.5 Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Theme Manager Task 2.5 Verification</h1>
+  <p>Testing the four theme state management functions:</p>
+  <ul>
+    <li><code>getCurrentTheme()</code></li>
+    <li><code>setTheme(theme)</code></li>
+    <li><code>toggleTheme()</code></li>
+    <li><code>isDarkMode()</code></li>
+  </ul>
+
+  <div class="test-section">
+    <h2>Manual Controls</h2>
+    <button onclick="testSetLight()">Set Light Theme</button>
+    <button onclick="testSetDark()">Set Dark Theme</button>
+    <button onclick="testToggle()">Toggle Theme</button>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Current State</h2>
+    <div class="info">
+      <strong>Current Theme:</strong> <span id="current-theme">-</span><br>
+      <strong>Is Dark Mode:</strong> <span id="is-dark">-</span><br>
+      <strong>DOM Attribute:</strong> <span id="dom-attr">-</span><br>
+      <strong>Local Storage:</strong> <span id="storage-value">-</span>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-results"></div>
+  </div>
+
+  <script src="js/theme-manager.js"></script>
+  <script>
+    // Helper to update current state display
+    function updateStateDisplay() {
+      document.getElementById('current-theme').textContent = getCurrentTheme();
+      document.getElementById('is-dark').textContent = isDarkMode();
+      document.getElementById('dom-attr').textContent = document.documentElement.getAttribute('data-theme') || 'null';
+      try {
+        document.getElementById('storage-value').textContent = localStorage.getItem('theme-preference') || 'null';
+      } catch (e) {
+        document.getElementById('storage-value').textContent = 'Error: ' + e.message;
+      }
+    }
+
+    // Manual test functions
+    function testSetLight() {
+      setTheme('light');
+      updateStateDisplay();
+      addResult('Manual: Set light theme', true);
+    }
+
+    function testSetDark() {
+      setTheme('dark');
+      updateStateDisplay();
+      addResult('Manual: Set dark theme', true);
+    }
+
+    function testToggle() {
+      const before = getCurrentTheme();
+      toggleTheme();
+      const after = getCurrentTheme();
+      updateStateDisplay();
+      addResult(`Manual: Toggled from ${before} to ${after}`, true);
+    }
+
+    function clearStorage() {
+      localStorage.removeItem('theme-preference');
+      updateStateDisplay();
+      addResult('Cleared Local Storage', true);
+    }
+
+    // Test result display
+    function addResult(testName, passed, details = '') {
+      const resultsDiv = document.getElementById('test-results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+      resultDiv.innerHTML = `
+        <strong>${passed ? '✓' : '✗'} ${testName}</strong>
+        ${details ? '<br>' + details : ''}
+      `;
+      resultsDiv.appendChild(resultDiv);
+    }
+
+    // Automated tests
+    function runAllTests() {
+      document.getElementById('test-results').innerHTML = '';
+      
+      // Test 1: getCurrentTheme returns default when no theme is set
+      localStorage.removeItem('theme-preference');
+      document.documentElement.removeAttribute('data-theme');
+      const defaultTheme = getCurrentTheme();
+      addResult(
+        'Test 1: getCurrentTheme() returns default (light)',
+        defaultTheme === 'light',
+        `Expected: 'light', Got: '${defaultTheme}'`
+      );
+
+      // Test 2: setTheme applies light theme
+      setTheme('light');
+      const lightTheme = getCurrentTheme();
+      const lightAttr = document.documentElement.getAttribute('data-theme');
+      const lightStorage = localStorage.getItem('theme-preference');
+      addResult(
+        'Test 2: setTheme("light") works correctly',
+        lightTheme === 'light' && lightAttr === 'light' && lightStorage === 'light',
+        `Theme: ${lightTheme}, DOM: ${lightAttr}, Storage: ${lightStorage}`
+      );
+
+      // Test 3: setTheme applies dark theme
+      setTheme('dark');
+      const darkTheme = getCurrentTheme();
+      const darkAttr = document.documentElement.getAttribute('data-theme');
+      const darkStorage = localStorage.getItem('theme-preference');
+      addResult(
+        'Test 3: setTheme("dark") works correctly',
+        darkTheme === 'dark' && darkAttr === 'dark' && darkStorage === 'dark',
+        `Theme: ${darkTheme}, DOM: ${darkAttr}, Storage: ${darkStorage}`
+      );
+
+      // Test 4: isDarkMode returns true when dark
+      const isDarkWhenDark = isDarkMode();
+      addResult(
+        'Test 4: isDarkMode() returns true when dark theme is active',
+        isDarkWhenDark === true,
+        `Expected: true, Got: ${isDarkWhenDark}`
+      );
+
+      // Test 5: isDarkMode returns false when light
+      setTheme('light');
+      const isDarkWhenLight = isDarkMode();
+      addResult(
+        'Test 5: isDarkMode() returns false when light theme is active',
+        isDarkWhenLight === false,
+        `Expected: false, Got: ${isDarkWhenLight}`
+      );
+
+      // Test 6: toggleTheme switches from light to dark
+      setTheme('light');
+      toggleTheme();
+      const afterToggle1 = getCurrentTheme();
+      addResult(
+        'Test 6: toggleTheme() switches from light to dark',
+        afterToggle1 === 'dark',
+        `Expected: 'dark', Got: '${afterToggle1}'`
+      );
+
+      // Test 7: toggleTheme switches from dark to light
+      toggleTheme();
+      const afterToggle2 = getCurrentTheme();
+      addResult(
+        'Test 7: toggleTheme() switches from dark to light',
+        afterToggle2 === 'light',
+        `Expected: 'light', Got: '${afterToggle2}'`
+      );
+
+      // Test 8: setTheme validates input (invalid theme)
+      setTheme('light');
+      setTheme('invalid');
+      const afterInvalid = getCurrentTheme();
+      addResult(
+        'Test 8: setTheme() rejects invalid theme values',
+        afterInvalid === 'light',
+        `Theme should remain 'light', Got: '${afterInvalid}'`
+      );
+
+      // Test 9: getCurrentTheme handles invalid DOM attribute
+      document.documentElement.setAttribute('data-theme', 'invalid');
+      const invalidTheme = getCurrentTheme();
+      addResult(
+        'Test 9: getCurrentTheme() returns default for invalid DOM attribute',
+        invalidTheme === 'light',
+        `Expected: 'light', Got: '${invalidTheme}'`
+      );
+
+      // Test 10: Multiple toggles work correctly
+      setTheme('light');
+      toggleTheme(); // -> dark
+      toggleTheme(); // -> light
+      toggleTheme(); // -> dark
+      const afterMultipleToggles = getCurrentTheme();
+      addResult(
+        'Test 10: Multiple toggles work correctly',
+        afterMultipleToggles === 'dark',
+        `Expected: 'dark' after 3 toggles from light, Got: '${afterMultipleToggles}'`
+      );
+
+      updateStateDisplay();
+    }
+
+    // Initialize display on load
+    updateStateDisplay();
+  </script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 11.2 - Accessibility Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+        }
+        .pass {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .fail {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .summary {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task 11.2 - ARIA Labels and Semantic HTML Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <script>
+        const results = [];
+
+        function addResult(testName, passed, details) {
+            results.push({ testName, passed, details });
+        }
+
+        function displayResults() {
+            const container = document.getElementById('test-results');
+            const summaryDiv = document.getElementById('summary');
+            
+            let html = '';
+            let passCount = 0;
+            let failCount = 0;
+
+            results.forEach(result => {
+                const status = result.passed ? 'PASS' : 'FAIL';
+                const statusClass = result.passed ? 'pass' : 'fail';
+                
+                if (result.passed) passCount++;
+                else failCount++;
+
+                html += `
+                    <div class="test-item">
+                        <strong class="${statusClass}">[${status}]</strong> ${result.testName}
+                        <div class="info">${result.details}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            const totalTests = results.length;
+            const passRate = ((passCount / totalTests) * 100).toFixed(1);
+            
+            summaryDiv.innerHTML = `
+                <h3>Summary</h3>
+                <p><strong>Total Tests:</strong> ${totalTests}</p>
+                <p><strong>Passed:</strong> <span class="pass">${passCount}</span></p>
+                <p><strong>Failed:</strong> <span class="fail">${failCount}</span></p>
+                <p><strong>Pass Rate:</strong> ${passRate}%</p>
+            `;
+        }
+
+        // Run tests after page loads
+        window.addEventListener('load', () => {
+            // Open the main app in an iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            // Wait for iframe to load
+            iframe.onload = () => {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+                // Test 1: Timer buttons have aria-label
+                const timerStart = doc.getElementById('timer-start');
+                const timerStop = doc.getElementById('timer-stop');
+                const timerReset = doc.getElementById('timer-reset');
+                
+                const startLabel = timerStart?.getAttribute('aria-label');
+                const stopLabel = timerStop?.getAttribute('aria-label');
+                const resetLabel = timerReset?.getAttribute('aria-label');
+                
+                addResult(
+                    'Timer buttons have aria-label',
+                    startLabel && stopLabel && resetLabel,
+                    `Start: "${startLabel}", Stop: "${stopLabel}", Reset: "${resetLabel}"`
+                );
+
+                // Test 2: Timer display has aria-live
+                const timerDisplay = doc.querySelector('.timer-display');
+                const ariaLive = timerDisplay?.getAttribute('aria-live');
+                
+                addResult(
+                    'Timer display has aria-live="polite"',
+                    ariaLive === 'polite',
+                    `Found: aria-live="${ariaLive}"`
+                );
+
+                // Test 3: Timer status has aria-live
+                const timerStatus = doc.querySelector('.timer-status');
+                const statusAriaLive = timerStatus?.getAttribute('aria-live');
+                
+                addResult(
+                    'Timer status has aria-live="polite"',
+                    statusAriaLive === 'polite',
+                    `Found: aria-live="${statusAriaLive}"`
+                );
+
+                // Test 4: Form inputs have aria-label
+                const todoInput = doc.getElementById('todo-input');
+                const linkName = doc.getElementById('link-name');
+                const linkUrl = doc.getElementById('link-url');
+                
+                const todoLabel = todoInput?.getAttribute('aria-label');
+                const nameLabel = linkName?.getAttribute('aria-label');
+                const urlLabel = linkUrl?.getAttribute('aria-label');
+                
+                addResult(
+                    'Form inputs have aria-label',
+                    todoLabel && nameLabel && urlLabel,
+                    `Todo: "${todoLabel}", Link Name: "${nameLabel}", Link URL: "${urlLabel}"`
+                );
+
+                // Test 5: Submit buttons have aria-label
+                const todoSubmit = doc.querySelector('#todo-list button[type="submit"]');
+                const linksSubmit = doc.querySelector('#quick-links button[type="submit"]');
+                
+                const todoSubmitLabel = todoSubmit?.getAttribute('aria-label');
+                const linksSubmitLabel = linksSubmit?.getAttribute('aria-label');
+                
+                addResult(
+                    'Submit buttons have aria-label',
+                    todoSubmitLabel && linksSubmitLabel,
+                    `Todo: "${todoSubmitLabel}", Links: "${linksSubmitLabel}"`
+                );
+
+                // Test 6: Semantic HTML - button elements
+                const buttons = doc.querySelectorAll('button');
+                addResult(
+                    'Uses semantic <button> elements',
+                    buttons.length >= 6,
+                    `Found ${buttons.length} button elements`
+                );
+
+                // Test 7: Semantic HTML - form elements
+                const forms = doc.querySelectorAll('form');
+                addResult(
+                    'Uses semantic <form> elements',
+                    forms.length === 2,
+                    `Found ${forms.length} form elements (expected 2)`
+                );
+
+                // Test 8: Semantic HTML - input elements
+                const inputs = doc.querySelectorAll('input');
+                addResult(
+                    'Uses semantic <input> elements',
+                    inputs.length >= 3,
+                    `Found ${inputs.length} input elements`
+                );
+
+                // Test 9: Semantic HTML - ul/li elements
+                const lists = doc.querySelectorAll('ul');
+                addResult(
+                    'Uses semantic <ul> elements for lists',
+                    lists.length === 2,
+                    `Found ${lists.length} ul elements (expected 2)`
+                );
+
+                // Test 10: Lists have role="list"
+                const todoList = doc.querySelector('.todo-items');
+                const linksList = doc.querySelector('.link-items');
+                
+                const todoRole = todoList?.getAttribute('role');
+                const linksRole = linksList?.getAttribute('role');
+                
+                addResult(
+                    'Lists have role="list"',
+                    todoRole === 'list' && linksRole === 'list',
+                    `Todo list: role="${todoRole}", Links list: role="${linksRole}"`
+                );
+
+                // Test 11: Semantic HTML - main, header, section elements
+                const main = doc.querySelector('main');
+                const header = doc.querySelector('header');
+                const sections = doc.querySelectorAll('section');
+                
+                addResult(
+                    'Uses semantic structural elements',
+                    main && header && sections.length === 4,
+                    `<main>: ${!!main}, <header>: ${!!header}, <section>: ${sections.length} (expected 4)`
+                );
+
+                // Test 12: Test dynamic task checkbox aria-checked
+                // We need to create a task to test this
+                const todoController = iframe.contentWindow.eval(`
+                    (function() {
+                        const todoList = document.getElementById('todo-list');
+                        const storageManager = new StorageManager();
+                        const controller = new TodoController(todoList, storageManager);
+                        controller.init();
+                        controller.addTask('Test task for accessibility');
+                        return controller;
+                    })()
+                `);
+
+                setTimeout(() => {
+                    const taskCheckbox = doc.querySelector('.todo-checkbox');
+                    const ariaChecked = taskCheckbox?.getAttribute('aria-checked');
+                    const hasAriaChecked = ariaChecked !== null;
+                    
+                    addResult(
+                        'Task checkboxes have aria-checked attribute',
+                        hasAriaChecked,
+                        `Found: aria-checked="${ariaChecked}" on dynamically created task`
+                    );
+
+                    // Test 13: Task checkbox aria-label
+                    const checkboxLabel = taskCheckbox?.getAttribute('aria-label');
+                    addResult(
+                        'Task checkboxes have descriptive aria-label',
+                        checkboxLabel && checkboxLabel.includes('Test task'),
+                        `Found: "${checkboxLabel}"`
+                    );
+
+                    // Test 14: Edit button aria-label
+                    const editButton = doc.querySelector('.todo-edit');
+                    const editLabel = editButton?.getAttribute('aria-label');
+                    addResult(
+                        'Edit buttons have descriptive aria-label',
+                        editLabel && editLabel.includes('Edit'),
+                        `Found: "${editLabel}"`
+                    );
+
+                    // Test 15: Delete button aria-label
+                    const deleteButton = doc.querySelector('.todo-delete');
+                    const deleteLabel = deleteButton?.getAttribute('aria-label');
+                    addResult(
+                        'Delete buttons have descriptive aria-label',
+                        deleteLabel && deleteLabel.includes('Delete'),
+                        `Found: "${deleteLabel}"`
+                    );
+
+                    // Test 16: Test aria-checked updates when toggled
+                    if (taskCheckbox) {
+                        taskCheckbox.click();
+                        setTimeout(() => {
+                            const updatedAriaChecked = doc.querySelector('.todo-checkbox')?.getAttribute('aria-checked');
+                            addResult(
+                                'aria-checked updates when task is toggled',
+                                updatedAriaChecked === 'true',
+                                `After toggle: aria-checked="${updatedAriaChecked}"`
+                            );
+
+                            // Test 17: Create a link to test link aria-label
+                            iframe.contentWindow.eval(`
+                                (function() {
+                                    const quickLinks = document.getElementById('quick-links');
+                                    const storageManager = new StorageManager();
+                                    const controller = new LinksController(quickLinks, storageManager);
+                                    controller.init();
+                                    controller.addLink('Test Link', 'https://example.com');
+                                })()
+                            `);
+
+                            setTimeout(() => {
+                                const linkAnchor = doc.querySelector('.link-item a');
+                                const linkLabel = linkAnchor?.getAttribute('aria-label');
+                                addResult(
+                                    'Link anchors have descriptive aria-label',
+                                    linkLabel && linkLabel.includes('Test Link'),
+                                    `Found: "${linkLabel}"`
+                                );
+
+                                const linkDelete = doc.querySelector('.link-delete');
+                                const linkDeleteLabel = linkDelete?.getAttribute('aria-label');
+                                addResult(
+                                    'Link delete buttons have descriptive aria-label',
+                                    linkDeleteLabel && linkDeleteLabel.includes('Delete'),
+                                    `Found: "${linkDeleteLabel}"`
+                                );
+
+                                // Display all results
+                                displayResults();
+                            }, 100);
+                        }, 100);
+                    } else {
+                        displayResults();
+                    }
+                }, 100);
+            };
+        });
+    </script>
+</body>
+</html>

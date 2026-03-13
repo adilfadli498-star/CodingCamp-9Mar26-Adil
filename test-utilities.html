@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility Functions Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Utility Functions Test</h1>
+    <div id="test-results"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+
+        function addResult(testName, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}: ${message}`;
+            results.appendChild(div);
+        }
+
+        // Test formatTime
+        const testDate = new Date('2024-01-15T14:30:45');
+        const timeResult = formatTime(testDate);
+        addResult('formatTime', timeResult === '14:30:45', `Expected "14:30:45", got "${timeResult}"`);
+
+        // Test formatDate
+        const dateResult = formatDate(testDate);
+        const expectedDate = 'Monday, January 15, 2024';
+        addResult('formatDate', dateResult === expectedDate, `Expected "${expectedDate}", got "${dateResult}"`);
+
+        // Test getGreeting - Morning
+        addResult('getGreeting (5 AM)', getGreeting(5) === 'Good Morning', `Hour 5: ${getGreeting(5)}`);
+        addResult('getGreeting (11 AM)', getGreeting(11) === 'Good Morning', `Hour 11: ${getGreeting(11)}`);
+
+        // Test getGreeting - Afternoon
+        addResult('getGreeting (12 PM)', getGreeting(12) === 'Good Afternoon', `Hour 12: ${getGreeting(12)}`);
+        addResult('getGreeting (4 PM)', getGreeting(16) === 'Good Afternoon', `Hour 16: ${getGreeting(16)}`);
+
+        // Test getGreeting - Evening
+        addResult('getGreeting (5 PM)', getGreeting(17) === 'Good Evening', `Hour 17: ${getGreeting(17)}`);
+        addResult('getGreeting (8 PM)', getGreeting(20) === 'Good Evening', `Hour 20: ${getGreeting(20)}`);
+
+        // Test getGreeting - Night
+        addResult('getGreeting (9 PM)', getGreeting(21) === 'Good Night', `Hour 21: ${getGreeting(21)}`);
+        addResult('getGreeting (4 AM)', getGreeting(4) === 'Good Night', `Hour 4: ${getGreeting(4)}`);
+        addResult('getGreeting (0 AM)', getGreeting(0) === 'Good Night', `Hour 0: ${getGreeting(0)}`);
+
+        // Test generateId
+        const id1 = generateId();
+        const id2 = generateId();
+        addResult('generateId uniqueness', id1 !== id2, `Generated IDs are unique: ${id1} !== ${id2}`);
+        addResult('generateId format', id1.includes('-'), `ID contains hyphen: ${id1}`);
+
+        // Test validateUrl
+        addResult('validateUrl (valid https)', validateUrl('https://example.com'), 'https://example.com is valid');
+        addResult('validateUrl (valid http)', validateUrl('http://example.com'), 'http://example.com is valid');
+        addResult('validateUrl (no protocol)', !validateUrl('example.com'), 'example.com is invalid (no protocol)');
+        addResult('validateUrl (invalid protocol)', !validateUrl('ftp://example.com'), 'ftp://example.com is invalid');
+        addResult('validateUrl (malformed)', !validateUrl('not a url'), '"not a url" is invalid');
+    </script>
+</body>
+</html>

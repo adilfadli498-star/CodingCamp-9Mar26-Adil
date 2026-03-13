@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Controller Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .widget {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .timer-status {
+            text-align: center;
+            font-size: 18px;
+            color: green;
+            min-height: 30px;
+        }
+        .test-results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+        .test-pass {
+            color: green;
+        }
+        .test-fail {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timer Controller Test</h1>
+    
+    <section id="focus-timer" class="widget">
+        <h2>Focus Timer</h2>
+        <div class="timer-display">25:00</div>
+        <div class="timer-controls">
+            <button id="timer-start">Start</button>
+            <button id="timer-stop">Stop</button>
+            <button id="timer-reset">Reset</button>
+        </div>
+        <div class="timer-status"></div>
+    </section>
+
+    <div class="test-results">
+        <h3>Test Results:</h3>
+        <div id="test-output"></div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Test suite for TimerController
+        const testOutput = document.getElementById('test-output');
+        
+        function logTest(name, passed, message = '') {
+            const div = document.createElement('div');
+            div.className = passed ? 'test-pass' : 'test-fail';
+            div.textContent = `${passed ? '✓' : '✗'} ${name}${message ? ': ' + message : ''}`;
+            testOutput.appendChild(div);
+        }
+
+        // Initialize timer
+        const focusTimer = document.getElementById('focus-timer');
+        const timerController = new TimerController(focusTimer);
+        timerController.init();
+
+        // Run tests
+        setTimeout(() => {
+            // Test 1: Initial state
+            logTest('Initial state', 
+                timerController.totalSeconds === 1500 && 
+                timerController.remainingSeconds === 1500 && 
+                !timerController.isRunning,
+                'totalSeconds=1500, remainingSeconds=1500, isRunning=false'
+            );
+
+            // Test 2: Initial display
+            const display = focusTimer.querySelector('.timer-display');
+            logTest('Initial display', 
+                display.textContent === '25:00',
+                `Display shows "${display.textContent}"`
+            );
+
+            // Test 3: Start button enabled initially
+            const startButton = focusTimer.querySelector('#timer-start');
+            logTest('Start button enabled initially', 
+                !startButton.disabled,
+                'Start button is enabled'
+            );
+
+            // Test 4: formatTime method
+            logTest('formatTime(1500)', 
+                timerController.formatTime(1500) === '25:00',
+                timerController.formatTime(1500)
+            );
+            logTest('formatTime(60)', 
+                timerController.formatTime(60) === '01:00',
+                timerController.formatTime(60)
+            );
+            logTest('formatTime(0)', 
+                timerController.formatTime(0) === '00:00',
+                timerController.formatTime(0)
+            );
+            logTest('formatTime(125)', 
+                timerController.formatTime(125) === '02:05',
+                timerController.formatTime(125)
+            );
+
+            // Test 5: Start timer
+            timerController.start();
+            logTest('Start timer', 
+                timerController.isRunning && startButton.disabled,
+                'isRunning=true, start button disabled'
+            );
+
+            // Test 6: Tick decrements
+            const beforeTick = timerController.remainingSeconds;
+            timerController.tick();
+            logTest('Tick decrements', 
+                timerController.remainingSeconds === beforeTick - 1,
+                `${beforeTick} -> ${timerController.remainingSeconds}`
+            );
+
+            // Test 7: Stop timer
+            timerController.stop();
+            logTest('Stop timer', 
+                !timerController.isRunning && !startButton.disabled,
+                'isRunning=false, start button enabled'
+            );
+
+            // Test 8: Reset timer
+            timerController.remainingSeconds = 100;
+            timerController.reset();
+            logTest('Reset timer', 
+                timerController.remainingSeconds === 1500 && !timerController.isRunning,
+                'remainingSeconds=1500, isRunning=false'
+            );
+
+            // Test 9: Timer completion
+            timerController.remainingSeconds = 1;
+            timerController.start();
+            setTimeout(() => {
+                const statusDisplay = focusTimer.querySelector('.timer-status');
+                logTest('Timer completion', 
+                    !timerController.isRunning && 
+                    timerController.remainingSeconds === 0 &&
+                    statusDisplay.textContent.includes('complete'),
+                    'Timer stopped, status message displayed'
+                );
+            }, 1500);
+
+        }, 100);
+    </script>
+</body>
+</html>

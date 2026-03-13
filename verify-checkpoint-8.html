@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkpoint 8 - Component Independence Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Checkpoint 8: Component Independence Verification</h1>
+    <p>This test verifies that all components work independently without errors.</p>
+    
+    <div id="test-results"></div>
+
+    <!-- Hidden containers for components -->
+    <div style="display: none;">
+        <div id="greeting-widget">
+            <div class="greeting-date"></div>
+            <div class="greeting-time"></div>
+            <div class="greeting-message"></div>
+        </div>
+        
+        <div id="focus-timer">
+            <div class="timer-display">25:00</div>
+            <button class="timer-start">Start</button>
+            <button class="timer-stop">Stop</button>
+            <button class="timer-reset">Reset</button>
+            <div class="timer-status"></div>
+        </div>
+        
+        <div id="todo-list">
+            <form class="todo-form">
+                <input type="text" class="todo-input" maxlength="500">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="todo-items"></ul>
+            <div class="empty-state">No tasks yet</div>
+        </div>
+        
+        <div id="quick-links">
+            <form class="links-form">
+                <input type="text" class="links-name" maxlength="100">
+                <input type="url" class="links-url">
+                <button type="submit">Add</button>
+            </form>
+            <ul class="links-list"></ul>
+            <div class="empty-state">No links yet</div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(testName, passed, message = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}${message ? ': ' + message : ''}`;
+            results.appendChild(div);
+            return passed;
+        }
+
+        function addSection(title) {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            const heading = document.createElement('h2');
+            heading.textContent = title;
+            section.appendChild(heading);
+            results.appendChild(section);
+            return section;
+        }
+
+        // Run all tests
+        let allPassed = true;
+
+        // Test 1: Utility Functions
+        const utilSection = addSection('1. Utility Functions');
+        try {
+            const date = new Date('2024-01-15T14:30:45');
+            
+            const time = formatTime(date);
+            allPassed &= addResult('formatTime', time === '14:30:45', `Got: ${time}`);
+            
+            const dateStr = formatDate(date);
+            allPassed &= addResult('formatDate', dateStr.includes('January') && dateStr.includes('15'), `Got: ${dateStr}`);
+            
+            const morning = getGreeting(8);
+            allPassed &= addResult('getGreeting (morning)', morning === 'Good Morning', `Got: ${morning}`);
+            
+            const afternoon = getGreeting(14);
+            allPassed &= addResult('getGreeting (afternoon)', afternoon === 'Good Afternoon', `Got: ${afternoon}`);
+            
+            const evening = getGreeting(18);
+            allPassed &= addResult('getGreeting (evening)', evening === 'Good Evening', `Got: ${evening}`);
+            
+            const night = getGreeting(22);
+            allPassed &= addResult('getGreeting (night)', night === 'Good Night', `Got: ${night}`);
+            
+            const id = generateId();
+            allPassed &= addResult('generateId', id && id.includes('-'), `Got: ${id}`);
+            
+            const validUrl = validateUrl('https://example.com');
+            allPassed &= addResult('validateUrl (valid)', validUrl === true);
+            
+            const invalidUrl = validateUrl('not-a-url');
+            allPassed &= addResult('validateUrl (invalid)', invalidUrl === false);
+        } catch (error) {
+            allPassed = false;
+            addResult('Utility Functions', false, error.message);
+        }
+
+        // Test 2: StorageManager
+        const storageSection = addSection('2. StorageManager Class');
+        try {
+            const storage = new StorageManager();
+            
+            allPassed &= addResult('StorageManager instantiation', storage !== null);
+            allPassed &= addResult('isAvailable', typeof storage.isAvailable === 'function');
+            
+            const testData = { test: 'data', number: 42 };
+            const saved = storage.save('test-checkpoint-8', testData);
+            allPassed &= addResult('save method', saved === true);
+            
+            const loaded = storage.load('test-checkpoint-8');
+            allPassed &= addResult('load method', loaded && loaded.test === 'data' && loaded.number === 42);
+            
+            storage.remove('test-checkpoint-8');
+            const removed = storage.load('test-checkpoint-8');
+            allPassed &= addResult('remove method', removed === null);
+            
+        } catch (error) {
+            allPassed = false;
+            addResult('StorageManager', false, error.message);
+        }
+
+        // Test 3: GreetingController
+        const greetingSection = addSection('3. GreetingController Class');
+        try {
+            const greetingContainer = document.getElementById('greeting-widget');
+            const greetingController = new GreetingController(greetingContainer);
+            
+            allPassed &= addResult('GreetingController instantiation', greetingController !== null);
+            allPassed &= addResult('init method exists', typeof greetingController.init === 'function');
+            allPassed &= addResult('updateDisplay method exists', typeof greetingController.updateDisplay === 'function');
+            allPassed &= addResult('destroy method exists', typeof greetingController.destroy === 'function');
+            
+            greetingController.init();
+            allPassed &= addResult('init executes without error', true);
+            
+            const timeElement = greetingContainer.querySelector('.greeting-time');
+            allPassed &= addResult('updates time display', timeElement.textContent.length > 0);
+            
+            const dateElement = greetingContainer.querySelector('.greeting-date');
+            allPassed &= addResult('updates date display', dateElement.textContent.length > 0);
+            
+            const messageElement = greetingContainer.querySelector('.greeting-message');
+            allPassed &= addResult('updates greeting message', messageElement.textContent.length > 0);
+            
+            greetingController.destroy();
+            allPassed &= addResult('destroy executes without error', true);
+            
+        } catch (error) {
+            allPassed = false;
+            addResult('GreetingController', false, error.message);
+        }
+
+        // Test 4: TimerController
+        const timerSection = addSection('4. TimerController Class');
+        try {
+            const timerContainer = document.getElementById('focus-timer');
+            const timerController = new TimerController(timerContainer);
+            
+            allPassed &= addResult('TimerController instantiation', timerController !== null);
+            allPassed &= addResult('init method exists', typeof timerController.init === 'function');
+            allPassed &= addResult('start method exists', typeof timerController.start === 'function');
+            allPassed &= addResult('stop method exists', typeof timerController.stop === 'function');
+            allPassed &= addResult('reset method exists', typeof timerController.reset === 'function');
+            
+            timerController.init();
+            allPassed &= addResult('init executes without error', true);
+            
+            const display = timerContainer.querySelector('.timer-display');
+            allPassed &= addResult('initial display shows 25:00', display.textContent === '25:00');
+            
+            timerController.start();
+            allPassed &= addResult('start executes without error', true);
+            allPassed &= addResult('isRunning is true after start', timerController.isRunning === true);
+            
+            timerController.stop();
+            allPassed &= addResult('stop executes without error', true);
+            allPassed &= addResult('isRunning is false after stop', timerController.isRunning === false);
+            
+            timerController.reset();
+            allPassed &= addResult('reset executes without error', true);
+            allPassed &= addResult('display shows 25:00 after reset', display.textContent === '25:00');
+            
+        } catch (error) {
+            allPassed = false;
+            addResult('TimerController', false, error.message);
+        }
+
+        // Test 5: TodoController
+        const todoSection = addSection('5. TodoController Class');
+        try {
+            const storage = new StorageManager();
+            storage.remove('productivity-dashboard-tasks'); // Clean slate
+            
+            const todoContainer = document.getElementById('todo-list');
+            const todoController = new TodoController(todoContainer, storage);
+            
+            allPassed &= addResult('TodoController instantiation', todoController !== null);
+            allPassed &= addResult('init method exists', typeof todoController.init === 'function');
+            allPassed &= addResult('addTask method exists', typeof todoController.addTask === 'function');
+            allPassed &= addResult('editTask method exists', typeof todoController.editTask === 'function');
+            allPassed &= addResult('toggleTask method exists', typeof todoController.toggleTask === 'function');
+            allPassed &= addResult('deleteTask method exists', typeof todoController.deleteTask === 'function');
+            
+            todoController.init();
+            allPassed &= addResult('init executes without error', true);
+            
+            const initialTaskCount = todoController.tasks.length;
+            allPassed &= addResult('starts with empty tasks', initialTaskCount === 0);
+            
+            todoController.addTask('Test task');
+            allPassed &= addResult('addTask executes without error', true);
+            allPassed &= addResult('task added to array', todoController.tasks.length === 1);
+            
+            const taskId = todoController.tasks[0].id;
+            todoController.toggleTask(taskId);
+            allPassed &= addResult('toggleTask executes without error', true);
+            allPassed &= addResult('task marked as completed', todoController.tasks[0].completed === true);
+            
+            todoController.editTask(taskId, 'Updated task');
+            allPassed &= addResult('editTask executes without error', true);
+            allPassed &= addResult('task text updated', todoController.tasks[0].text === 'Updated task');
+            
+            todoController.deleteTask(taskId);
+            allPassed &= addResult('deleteTask executes without error', true);
+            allPassed &= addResult('task removed from array', todoController.tasks.length === 0);
+            
+            storage.remove('productivity-dashboard-tasks'); // Cleanup
+            
+        } catch (error) {
+            allPassed = false;
+            addResult('TodoController', false, error.message);
+        }
+
+        // Test 6: LinksController
+        const linksSection = addSection('6. LinksController Class');
+        try {
+            const storage = new StorageManager();
+            storage.remove('productivity-dashboard-links'); // Clean slate
+            
+            const linksContainer = document.getElementById('quick-links');
+            const linksController = new LinksController(linksContainer, storage);
+            
+            allPassed &= addResult('LinksController instantiation', linksController !== null);
+            allPassed &= addResult('init method exists', typeof linksController.init === 'function');
+            allPassed &= addResult('addLink method exists', typeof linksController.addLink === 'function');
+            allPassed &= addResult('deleteLink method exists', typeof linksController.deleteLink === 'function');
+            
+            linksController.init();
+            allPassed &= addResult('init executes without error', true);
+            
+            const initialLinkCount = linksController.links.length;
+            allPassed &= addResult('starts with empty links', initialLinkCount === 0);
+            
+            linksController.addLink('Test Link', 'https://example.com');
+            allPassed &= addResult('addLink executes without error', true);
+            allPassed &= addResult('link added to array', linksController.links.length === 1);
+            
+            const linkId = linksController.links[0].id;
+            linksController.deleteLink(linkId);
+            allPassed &= addResult('deleteLink executes without error', true);
+            allPassed &= addResult('link removed from array', linksController.links.length === 0);
+            
+            storage.remove('productivity-dashboard-links'); // Cleanup
+            
+        } catch (error) {
+            allPassed = false;
+            addResult('LinksController', false, error.message);
+        }
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.className = 'test-section';
+        summary.innerHTML = `<h2>Summary</h2><div class="test-result ${allPassed ? 'pass' : 'fail'}">${allPassed ? '✓ All tests passed!' : '✗ Some tests failed'}</div>`;
+        results.appendChild(summary);
+    </script>
+</body>
+</html>

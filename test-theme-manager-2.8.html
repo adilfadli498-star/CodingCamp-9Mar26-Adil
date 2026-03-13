@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Manager Task 2.8 Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4a90e2;
+      padding-bottom: 10px;
+    }
+    
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+    
+    .test-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    button {
+      background: #4a90e2;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background: #357abd;
+    }
+    
+    #test-results {
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      background: #e8f4f8;
+      border-left: 4px solid #4a90e2;
+    }
+    
+    .status strong {
+      color: #2c5aa0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Theme Manager Task 2.8 Verification</h1>
+  <p>Testing the <code>initTheme()</code> function:</p>
+  <ul>
+    <li>Priority 1: Saved preference from Local Storage</li>
+    <li>Priority 2: System preference (prefers-color-scheme)</li>
+    <li>Priority 3: Default light theme</li>
+  </ul>
+
+  <div class="test-section">
+    <h2>Manual Controls</h2>
+    <button onclick="testSavedPreference()">Test Saved Preference</button>
+    <button onclick="testSystemPreference()">Test System Preference</button>
+    <button onclick="testDefaultTheme()">Test Default Theme</button>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <button onclick="showCurrentState()">Show Current State</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Current State</h2>
+    <div class="status">
+      <strong>Current Theme:</strong> <span id="current-theme">-</span><br>
+      <strong>DOM Attribute:</strong> <span id="dom-attribute">-</span><br>
+      <strong>Local Storage:</strong> <span id="local-storage">-</span><br>
+      <strong>System Preference:</strong> <span id="system-preference">-</span>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-results">Click "Run All Tests" to execute the test suite...</div>
+  </div>
+
+  <!-- Load the theme manager module -->
+  <script src="js/theme-manager.js"></script>
+
+  <script>
+    // Update current state display
+    function showCurrentState() {
+      document.getElementById('current-theme').textContent = getCurrentTheme();
+      document.getElementById('dom-attribute').textContent = 
+        document.documentElement.getAttribute('data-theme') || 'not set';
+      document.getElementById('local-storage').textContent = 
+        localStorage.getItem('theme-preference') || 'not set';
+      
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.getElementById('system-preference').textContent = prefersDark ? 'dark' : 'light';
+    }
+
+    // Manual test functions
+    function testSavedPreference() {
+      localStorage.removeItem('theme-preference');
+      document.documentElement.removeAttribute('data-theme');
+      
+      localStorage.setItem('theme-preference', 'dark');
+      initTheme();
+      
+      showCurrentState();
+      alert('Saved preference test: Set storage to "dark" and called initTheme().\nCheck if theme is now dark.');
+    }
+
+    function testSystemPreference() {
+      localStorage.removeItem('theme-preference');
+      document.documentElement.removeAttribute('data-theme');
+      
+      initTheme();
+      
+      showCurrentState();
+      alert('System preference test: Cleared storage and called initTheme().\nTheme should match your system preference.');
+    }
+
+    function testDefaultTheme() {
+      localStorage.removeItem('theme-preference');
+      document.documentElement.removeAttribute('data-theme');
+      
+      // Mock matchMedia to simulate unsupported browser
+      const original = window.matchMedia;
+      window.matchMedia = undefined;
+      
+      initTheme();
+      
+      window.matchMedia = original;
+      showCurrentState();
+      alert('Default theme test: Cleared storage and disabled system detection.\nTheme should default to light.');
+    }
+
+    function clearStorage() {
+      localStorage.removeItem('theme-preference');
+      document.documentElement.removeAttribute('data-theme');
+      showCurrentState();
+      alert('Storage and DOM cleared!');
+    }
+
+    // Run all automated tests
+    function runAllTests() {
+      const resultsDiv = document.getElementById('test-results');
+      resultsDiv.innerHTML = '';
+      
+      const results = [];
+      
+      // Helper to add result
+      function addResult(testName, passed, details) {
+        const icon = passed ? '✓' : '✗';
+        const status = passed ? 'PASS' : 'FAIL';
+        results.push(`${icon} ${status} - ${testName}\n  ${details}\n`);
+      }
+      
+      // Helper to reset state
+      function resetState() {
+        localStorage.removeItem('theme-preference');
+        document.documentElement.removeAttribute('data-theme');
+      }
+      
+      // Helper to mock system preference
+      function mockSystemPreference(prefersDark) {
+        const originalMatchMedia = window.matchMedia;
+        window.matchMedia = function(query) {
+          if (query === '(prefers-color-scheme: dark)') {
+            return {
+              matches: prefersDark,
+              media: query,
+              addEventListener: function() {},
+              removeEventListener: function() {}
+            };
+          }
+          return originalMatchMedia(query);
+        };
+        return function restore() {
+          window.matchMedia = originalMatchMedia;
+        };
+      }
+      
+      // Test 1: Saved preference (highest priority)
+      resetState();
+      localStorage.setItem('theme-preference', 'dark');
+      initTheme();
+      const test1Theme = getCurrentTheme();
+      addResult(
+        'Test 1: initTheme() applies saved preference',
+        test1Theme === 'dark',
+        `Expected: 'dark', Got: '${test1Theme}'`
+      );
+      
+      // Test 2: System preference (dark) when no saved preference
+      resetState();
+      const restore2 = mockSystemPreference(true);
+      initTheme();
+      const test2Theme = getCurrentTheme();
+      restore2();
+      addResult(
+        'Test 2: initTheme() applies system preference (dark)',
+        test2Theme === 'dark',
+        `Expected: 'dark', Got: '${test2Theme}'`
+      );
+      
+      // Test 3: System preference (light) when no saved preference
+      resetState();
+      const restore3 = mockSystemPreference(false);
+      initTheme();
+      const test3Theme = getCurrentTheme();
+      restore3();
+      addResult(
+        'Test 3: initTheme() applies system preference (light)',
+        test3Theme === 'light',
+        `Expected: 'light', Got: '${test3Theme}'`
+      );
+      
+      // Test 4: Default to light when system detection fails
+      resetState();
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = undefined;
+      initTheme();
+      const test4Theme = getCurrentTheme();
+      window.matchMedia = originalMatchMedia;
+      addResult(
+        'Test 4: initTheme() defaults to light when system detection unavailable',
+        test4Theme === 'light',
+        `Expected: 'light', Got: '${test4Theme}'`
+      );
+      
+      // Test 5: Saved preference overrides system preference
+      resetState();
+      localStorage.setItem('theme-preference', 'light');
+      const restore5 = mockSystemPreference(true);
+      initTheme();
+      const test5Theme = getCurrentTheme();
+      restore5();
+      addResult(
+        'Test 5: initTheme() prioritizes saved over system preference',
+        test5Theme === 'light',
+        `Expected: 'light' (saved), Got: '${test5Theme}'`
+      );
+      
+      // Test 6: Does not save system preference to storage
+      resetState();
+      const restore6 = mockSystemPreference(true);
+      initTheme();
+      const test6Storage = localStorage.getItem('theme-preference');
+      restore6();
+      addResult(
+        'Test 6: initTheme() does not save system preference to storage',
+        test6Storage === null,
+        `Expected: null, Got: '${test6Storage}'`
+      );
+      
+      // Test 7: Handles invalid saved preference
+      resetState();
+      localStorage.setItem('theme-preference', 'invalid');
+      const restore7 = mockSystemPreference(false);
+      initTheme();
+      const test7Theme = getCurrentTheme();
+      const test7Storage = localStorage.getItem('theme-preference');
+      restore7();
+      addResult(
+        'Test 7: initTheme() handles invalid saved preference',
+        test7Theme === 'light' && test7Storage === null,
+        `Expected: 'light' theme and null storage, Got: theme='${test7Theme}', storage='${test7Storage}'`
+      );
+      
+      // Test 8: Can be called multiple times safely
+      resetState();
+      localStorage.setItem('theme-preference', 'dark');
+      initTheme();
+      const test8Theme1 = getCurrentTheme();
+      initTheme();
+      const test8Theme2 = getCurrentTheme();
+      addResult(
+        'Test 8: initTheme() can be called multiple times safely',
+        test8Theme1 === 'dark' && test8Theme2 === 'dark',
+        `Expected: 'dark' both times, Got: '${test8Theme1}' then '${test8Theme2}'`
+      );
+      
+      // Test 9: Sets DOM attribute correctly
+      resetState();
+      localStorage.setItem('theme-preference', 'dark');
+      initTheme();
+      const test9Attr = document.documentElement.getAttribute('data-theme');
+      addResult(
+        'Test 9: initTheme() sets data-theme attribute on html element',
+        test9Attr === 'dark',
+        `Expected: 'dark', Got: '${test9Attr}'`
+      );
+      
+      // Test 10: Handles Local Storage errors gracefully
+      resetState();
+      const originalGetItem = Storage.prototype.getItem;
+      Storage.prototype.getItem = function() {
+        throw new Error('Storage unavailable');
+      };
+      const restore10 = mockSystemPreference(false);
+      let test10Passed = false;
+      let test10Details = '';
+      try {
+        initTheme();
+        const test10Theme = getCurrentTheme();
+        test10Passed = test10Theme === 'light';
+        test10Details = `Expected: 'light' (fallback), Got: '${test10Theme}'`;
+      } catch (error) {
+        test10Passed = false;
+        test10Details = `Threw error: ${error.message}`;
+      } finally {
+        Storage.prototype.getItem = originalGetItem;
+        restore10();
+      }
+      addResult(
+        'Test 10: initTheme() handles Local Storage errors gracefully',
+        test10Passed,
+        test10Details
+      );
+      
+      // Display results
+      resultsDiv.textContent = results.join('\n');
+      showCurrentState();
+    }
+
+    // Initialize state display on load
+    showCurrentState();
+  </script>
+</body>
+</html>
